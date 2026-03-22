@@ -3,39 +3,47 @@
 <head>
 <meta charset="UTF-8"/>
 <title>Supabase Test</title>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.26.0/dist/umd/supabase.min.js"></script>
 </head>
 <body style="font-family:sans-serif;padding:20px;background:#0d1117;color:#e6edf3;">
 <h2>Supabase Connection Test</h2>
 <div id="status" style="padding:12px;background:#1c2128;border-radius:8px;margin-top:16px;">Testing...</div>
+<div id="log" style="padding:12px;background:#1c2128;border-radius:8px;margin-top:10px;font-size:12px;color:#8892b0;"></div>
 
 <script>
-const URL = 'https://umzcrmwirxckkuucdrbq.supabase.co';
-const KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVtemNybXdpcnhja2t1dWNkcmJxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQwODcyMTksImV4cCI6MjA4OTY2MzIxOX0.0ERUtGbi33ffcdMFblyR9e5N-b_YK40hAUTyZ0WeS4o';
-const el = document.getElementById('status');
+var el = document.getElementById('status');
+var log = document.getElementById('log');
 
+function addLog(msg){ log.innerHTML += msg + '<br>'; }
+
+var URL = 'https://umzcrmwirxckkuucdrbq.supabase.co';
+var KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVtemNybXdpcnhja2t1dWNkcmJxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQwODcyMTksImV4cCI6MjA4OTY2MzIxOX0.0ERUtGbi33ffcdMFblyR9e5N-b_YK40hAUTyZ0WeS4o';
+
+// Test using raw fetch instead of Supabase library
 async function test(){
+  addLog('Browser: ' + navigator.userAgent.slice(0,80));
+  addLog('Testing raw fetch to Supabase REST API...');
+
   try {
-    el.textContent = 'Step 1: Checking if supabase library loaded...';
-    if(typeof supabase === 'undefined'){
-      el.textContent = 'FAIL: supabase library not loaded!';
-      el.style.color = '#f85149';
-      return;
-    }
-    el.textContent = 'Step 2: Creating client...';
-    const sb = supabase.createClient(URL, KEY);
-    el.textContent = 'Step 3: Querying expenses table...';
-    const {data, error} = await sb.from('expenses').select('id').limit(1);
-    if(error){
-      el.innerHTML = 'FAIL: ' + error.message + '<br><small>' + JSON.stringify(error) + '</small>';
-      el.style.color = '#f85149';
-    } else {
-      el.innerHTML = '✓ SUCCESS! Got ' + (data ? data.length : 0) + ' rows.<br><small>Supabase is working correctly.</small>';
+    var response = await fetch(URL + '/rest/v1/expenses?select=id&limit=1', {
+      headers: {
+        'apikey': KEY,
+        'Authorization': 'Bearer ' + KEY
+      }
+    });
+    addLog('HTTP status: ' + response.status);
+    var text = await response.text();
+    addLog('Response: ' + text.slice(0,200));
+    if(response.ok){
+      el.innerHTML = '✓ SUCCESS! Supabase REST API works directly.';
       el.style.color = '#3fb950';
+    } else {
+      el.innerHTML = 'FAIL: HTTP ' + response.status;
+      el.style.color = '#f85149';
     }
   } catch(e){
-    el.innerHTML = 'EXCEPTION: ' + e.message + '<br><small>' + e.toString() + '</small>';
+    el.innerHTML = 'FETCH ERROR: ' + e.message;
     el.style.color = '#f85149';
+    addLog('Error: ' + e.toString());
   }
 }
 
